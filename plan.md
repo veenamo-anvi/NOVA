@@ -75,16 +75,16 @@ NOVA/
 
 **Done when:** ~~`GET /network` returns 30 cells; a `/move/cell` persists and emits a topology_event.~~ ✅ Verified: 30 cells, move persists & reverses, PCI auto-assign (→31), 7 topology_events landed in InfluxDB.
 
-## Phase 2 — Simulators (Digital Twin)
+## Phase 2 — Simulators (Digital Twin) ✅ COMPLETE
 **Goal:** synthetic but physically-grounded KPI telemetry feeding InfluxDB.
 
-- [ ] **DU simulator** (`sims/du_sim/`): poll topology.json every `TOPO_POLL_SEC` (5 s); per assigned cell generate the full `cell_kpi` field set (connected_ues, prb_dl/ul_pct, sinr_db, rsrp/rsrq, power_w, throughput, cqi, mcs, bler_pct, latency_ms, jitter_ms, interference_dbm) using COST-231-Hata + diurnal load curves + `WEEKEND_FACTOR=0.75`; write `du_kpi`.
-- [ ] **CU simulator** (`sims/cu_sim/`): aggregate `cu_kpi` (RRC, PDCP throughput, F1/N2/N3/E1 latency).
-- [ ] **Core simulator** (`sims/core_sim/`): AMF/SMF/UPF → `core_kpi`.
-- [ ] Emit `ue_mobility` and `ue_usage` (per-slice) records.
-- [ ] Wire 3 DU containers (north/central/south-west cell splits) + 1 CU + core into compose.
+- [x] **DU simulator** (`sims/du_sim/`): reads topology each cycle (picks up moves); per assigned cell generates the full 16-field `cell_kpi` set using COST-231-Hata RSRP + diurnal load curve + `WEEKEND_FACTOR=0.75`; correlated SINR→CQI→MCS→throughput, load→power; writes `du_kpi`.
+- [x] **CU simulator** (`sims/cu_sim/`): aggregates its DUs' latest cell_kpi → `cu_kpi` (RRC, PDCP throughput, F1/N2/N3/E1 latency, CPU/mem).
+- [x] **Core simulator** (`sims/core_sim/`): network-wide aggregate → `core_kpi` AMF/SMF/UPF points.
+- [x] Emit `ue_mobility` (handover events) and `ue_usage` (per-slice eMBB/URLLC/mMTC) records.
+- [x] Wire 3 DU containers (12/9/9 cells) + 1 CU + core into compose (`sims` profile).
 
-**Done when:** Grafana shows live KPIs streaming for all 30 cells; load follows the diurnal curve.
+**Done when:** ~~Grafana shows live KPIs streaming for all 30 cells; load follows the diurnal curve.~~ ✅ All 30 cells stream live KPIs (verified via Controller `/network` merge), diurnal load confirmed across hours, all 7 measurements present. (Grafana *dashboards* land in Phase 6; datasource already provisioned.)
 
 ## Phase 3 — Planning Engine
 **Goal:** generate complete network plans from high-level parameters.
