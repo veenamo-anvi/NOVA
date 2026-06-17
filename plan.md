@@ -86,15 +86,15 @@ NOVA/
 
 **Done when:** ~~Grafana shows live KPIs streaming for all 30 cells; load follows the diurnal curve.~~ ✅ All 30 cells stream live KPIs (verified via Controller `/network` merge), diurnal load confirmed across hours, all 7 measurements present. (Grafana *dashboards* land in Phase 6; datasource already provisioned.)
 
-## Phase 3 — Planning Engine
+## Phase 3 — Planning Engine ✅ COMPLETE
 **Goal:** generate complete network plans from high-level parameters.
 
-- [ ] **Heuristic pipeline** (`agents/planning/`, FastAPI :8081): `select_cells` (density-weighted Haversine) → `assign_pcis` (graph-coloring, collision/confusion-free) → `assign_dus`/`assign_cus` (proximity) → centroids → timing_sync → `allocate_slices` (eMBB/URLLC/mMTC) → fronthaul routing → `plan_to_topology()` (preserves all hardware fields).
-- [ ] **MIP placement** (`mip_placer.py`): Almoghathawi 2024 formulation via `pulp`/CBC; COST-231-Walfisch-Ikegami NLOS path loss; coverage/capacity/SINR constraints; heuristic fallback on timeout.
-- [ ] **Multi-period** planning: Case A (phased rollout) + Case B (diurnal shift); 10 Bangalore demand clusters; CAPEX/OPEX split.
-- [ ] Routes: `/plan`, `/plan/multi-period`, `/plan/{id}`, `/plan/apply` (→ Controller `/topology/replace`), `/candidates`, `/demand-clusters`.
+- [x] **Heuristic pipeline** (`agents/planning/`, FastAPI :8081): `select_cells` (density-weighted Haversine) → `assign_pcis` (graph-coloring, collision/confusion-free) → `assign_dus`/`assign_cus` (proximity) → centroids → `timing_sync` → `allocate_slices` (eMBB/URLLC/mMTC) → `fronthaul_routing` → `plan_to_topology()` (preserves all hardware fields).
+- [x] **MIP placement** (`mip_placer.py`): Almoghathawi 2024 formulation via `pulp`/CBC; COST-231-Walfisch-Ikegami NLOS path loss; single-build/activation/coverage/capacity/SINR constraints; heuristic fallback on timeout/infeasibility.
+- [x] **Multi-period** planning: Case A (phased rollout, build reuse) + Case B (diurnal shift); 10 Bangalore demand clusters; CAPEX/OPEX split.
+- [x] Routes: `/plan`, `/plan/multi-period`, `/plan/{id}`, `/plan/apply` (→ Controller `/topology/replace`), `/candidates`, `/demand-clusters`, `/health`.
 
-**Done when:** `POST /plan` returns a valid plan; `/plan/apply` deploys it and simulators reconfigure live.
+**Done when:** ~~`POST /plan` returns a valid plan; `/plan/apply` deploys it and simulators reconfigure live.~~ ✅ Heuristic reproduces the 30-cell layout (clean PCI); MIP optimizes to 7 sites/875.5k vs heuristic 10 sites/1.25M; multi-period phased build schedule verified; `/plan/apply` pushed 30 cells to Controller and sims kept streaming.
 
 ## Phase 4 — KPI Monitoring Agent (ML + SON)
 **Goal:** autonomous anomaly detection and corrective action.
