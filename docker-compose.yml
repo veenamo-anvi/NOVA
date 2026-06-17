@@ -185,8 +185,10 @@ services:
       INFLUX_BUCKET: ${INFLUX_BUCKET:-telecom_metrics}
       CONTROLLER_URL: ${CONTROLLER_URL:-http://controller:8080}
       POLL_INTERVAL_SEC: ${POLL_INTERVAL_SEC:-30}
-      MODEL_PATH: ${MODEL_PATH:-kpi_model.pt}
+      MODEL_PATH: /models/kpi_model.pt
       MIN_CONFIDENCE: ${MIN_CONFIDENCE:-0.70}
+    volumes:
+      - kpi-models:/models
     depends_on:
       influxdb:
         condition: service_healthy
@@ -237,3 +239,4 @@ networks:
 volumes:
   influxdb-data:
   grafana-data:
+  kpi-models:

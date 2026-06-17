@@ -96,16 +96,25 @@ NOVA/
 
 **Done when:** ~~`POST /plan` returns a valid plan; `/plan/apply` deploys it and simulators reconfigure live.~~ ✅ Heuristic reproduces the 30-cell layout (clean PCI); MIP optimizes to 7 sites/875.5k vs heuristic 10 sites/1.25M; multi-period phased build schedule verified; `/plan/apply` pushed 30 cells to Controller and sims kept streaming.
 
-## Phase 4 — KPI Monitoring Agent (ML + SON)
+## Phase 4 — KPI Monitoring Agent (ML + SON) ✅ COMPLETE
 **Goal:** autonomous anomaly detection and corrective action.
 
-- [ ] **Dataset** (`ml/dataset_generator.py`): 50,400-row CSV (70d × 24h × 30 cells), 32 cols, class mix 70/15/8/5/2; CLI `--days --seed --out`.
-- [ ] **Model** (`ml/model.py`): 2-layer BiLSTM, hidden 64, dropout 0.25, input `(B, SEQ_LEN=6, N_FEATURES=9)`, 5-class head; per-feature min/range normalization.
-- [ ] **Training** (`ml/train.py`): WeightedRandomSampler, separate 4G/5G feature specs, export `kpi_model.pt`.
-- [ ] **Agent** (`agents/kpi_agent/`): poll InfluxDB every `POLL_INTERVAL_SEC`; per-cell sliding deque; rule-based fallback until window fills, BiLSTM inference after (confidence gate `MIN_CONFIDENCE=0.70`).
-- [ ] **SON actions**: OVERLOAD→LOAD_BALANCE (`/move/cell` to lightest DU + 3-cycle cooldown), UNDERLOAD→TRAFFIC_STEER, SINR_LOW→PCI_REOPT_REQUEST, POWER_WASTE→DTX_RECOMMEND; write `alerts` + `son_actions`.
+> Note: ML code lives in `agents/kpi_agent/` (not a separate `ml/`) so the
+> container is self-contained and trains on first boot per the spec's
+> `load_or_train`. Model weights persist to a `kpi-models` Docker volume.
 
-**Done when:** an induced overload triggers an automatic cell move logged to `son_actions`.
+- [x] **Dataset** (`dataset_generator.py`): 50,400-row CSV (70d × 24h × 30 cells), class mix 70/15/8/5/2; CLI `--days --seed --out`; shared `sample_kpi()` per-class sampler.
+- [x] **Model** (`model.py`): 2-layer BiLSTM, hidden 64, dropout 0.25, input `(B, 6, 9)`, Linear(128→64)→ReLU→Dropout→Linear(64→5).
+- [x] **Features** (`features.py`): fixed 9-feature order + min/range normalisation covering 4G+5G.
+- [x] **Training** (`train.py`): labelled sequences from per-class sampler, WeightedRandomSampler, exports `kpi_model.pt`.
+- [x] **Agent** (`kpi_agent.py`): polls InfluxDB; per-cell `deque(maxlen=6)`; rule-based fallback until window fills, then BiLSTM with `MIN_CONFIDENCE=0.70` gate.
+- [x] **SON actions**: OVERLOAD→LOAD_BALANCE (`/move/cell` to lightest DU + 3-cycle cooldown), UNDERLOAD→TRAFFIC_STEER, SINR_LOW→PCI_REOPT_REQUEST, POWER_WASTE→DTX_RECOMMEND; writes `alerts` + `son_actions`.
+
+**Done when:** ~~an induced overload triggers an automatic cell move logged to `son_actions`.~~ ✅ Verified: model trained on boot, BiLSTM engaged at cycle 6 with ~0.9999 confidence, peak-hour overloads auto-moved cells to the lightest DU (logged to `son_actions` + Controller `topology_event`); LOAD_BALANCE + PCI_REOPT_REQUEST action types confirmed.
+
+> Fixed mid-phase: the Flux query's `group(["cell_id","_field"])` stripped the
+> `du_id` tag, leaving load-balance with no target DU — removed the group() so
+> tags survive the pivot.
 
 ## Phase 5 — Orchestrator (LLM Agent)
 **Goal:** natural-language operator control via tool-calling.
