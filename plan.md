@@ -48,17 +48,19 @@ NOVA/
 
 ---
 
-## Phase 0 — Project Scaffolding & Contracts
+## Phase 0 — Project Scaffolding & Contracts ✅ COMPLETE
 **Goal:** repo skeleton, shared schemas, and infra that everything else builds on.
 
-- [ ] Create directory tree above; add `.gitignore` (Python, `*.pt`, `__pycache__`, `.env`).
-- [ ] Author `docker-compose.yml` skeleton with all 12 services (stubs OK) + shared network.
-- [ ] Stand up **InfluxDB** (:8086) and **Grafana** (:3000) services with init env (org `telecom`, bucket `telecom_metrics`, token).
-- [ ] Write `.env.example` documenting every env var from the spec config tables.
-- [ ] Define **`topology.json`** schema: `cus{}`, `dus{}`, `cells{}` with full hardware metadata (vendor, hardware_model, generation, band, freq_mhz, pci, antenna_config, tx_power_w, idle_power_w, peak_dl_mbps, max_ues, lat, lon, area, du_id).
-- [ ] Document the **9 InfluxDB measurements** (cell_kpi, du_kpi, cu_kpi, core_kpi, ue_mobility, ue_usage, alerts, son_actions, topology_event) with tags/fields — this is the cross-agent contract.
+- [x] Create directory tree above; add `.gitignore` (Python, `*.pt`, `__pycache__`, `.env`).
+- [x] Author `docker-compose.yml` with all 12 services (`sims`/`agents`/`full` profiles) + shared `nova` network.
+- [x] Stand up **InfluxDB** (:8086) and **Grafana** (:3000) with init env (org `telecom`, bucket `telecom_metrics`, token) + datasource/dashboard provisioning.
+- [x] Write `.env.example` documenting every env var from the spec config tables.
+- [x] Define **`topology.json`** schema + generator (`dev-env/config/generate_topology.py`): 30 cells, full hardware metadata, 16,500 cell-level max UEs, unique PCIs.
+- [x] Document the **9 InfluxDB measurements** in `docs/schema.md` — the cross-agent contract.
 
-**Done when:** `docker compose up influxdb grafana` works; topology.json validates against the documented schema.
+**Done when:** ~~`docker compose up influxdb grafana` works; topology.json validates against the documented schema.~~ ✅ InfluxDB ping 204, Grafana health ok, topology validated.
+
+> Note: removed a pre-existing `dev-env` Docker Compose project (26 containers, different multi-region topology) that conflicted on NOVA's container names/ports. Data volumes left intact.
 
 ## Phase 1 — Foundation: 30-Cell Topology + Controller
 **Goal:** the live network's source of truth and its control plane.

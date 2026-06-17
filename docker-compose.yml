@@ -1,0 +1,234 @@
+# NOVA — Telecom Network Automation : dev environment (12 containers)
+# Phase 0: influxdb + grafana run today from public images.
+# Remaining services reference build contexts filled in by later phases;
+# `docker compose up influxdb grafana` works before those exist.
+
+services:
+  # ---- Infrastructure ------------------------------------------------------
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_INIT_USERNAME:-admin}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_INIT_PASSWORD:-admin-password-2026}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUX_ORG:-telecom}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUX_BUCKET:-telecom_metrics}
+      DOCKER_INFLUXDB_INIT_RETENTION: ${INFLUXDB_INIT_RETENTION:-30d}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_TOKEN:-telecom-super-secret-auth-token-2026}
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [nova]
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    networks: [nova]
+
+  # ---- Simulators (digital twin) — Phase 2 ---------------------------------
+  core-sim:
+    build: ./sims/core_sim
+    container_name: core-sim
+    profiles: ["sims", "full"]
+    environment:
+      INFLUX_URL: ${INFLUX_URL:-http://influxdb:8086}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG:-telecom}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-telecom_metrics}
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    networks: [nova]
+
+  cu-mls:
+    build: ./sims/cu_sim
+    container_name: cu-mls
+    profiles: ["sims", "full"]
+    environment:
+      CU_ID: CU-MLS
+      INFLUX_URL: ${INFLUX_URL:-http://influxdb:8086}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG:-telecom}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-telecom_metrics}
+      TOPOLOGY_FILE: ${TOPOLOGY_FILE:-/config/topology.json}
+      TOPO_POLL_SEC: ${TOPO_POLL_SEC:-5}
+    volumes:
+      - ./dev-env/config:/config:ro
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    networks: [nova]
+
+  du-mls-1:
+    build: ./sims/du_sim
+    container_name: du-mls-1
+    profiles: ["sims", "full"]
+    environment:
+      DU_ID: DU-MLS-1
+      INFLUX_URL: ${INFLUX_URL:-http://influxdb:8086}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG:-telecom}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-telecom_metrics}
+      TOPOLOGY_FILE: ${TOPOLOGY_FILE:-/config/topology.json}
+      TOPO_POLL_SEC: ${TOPO_POLL_SEC:-5}
+    volumes:
+      - ./dev-env/config:/config:ro
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    networks: [nova]
+
+  du-mls-2:
+    build: ./sims/du_sim
+    container_name: du-mls-2
+    profiles: ["sims", "full"]
+    environment:
+      DU_ID: DU-MLS-2
+      INFLUX_URL: ${INFLUX_URL:-http://influxdb:8086}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG:-telecom}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-telecom_metrics}
+      TOPOLOGY_FILE: ${TOPOLOGY_FILE:-/config/topology.json}
+      TOPO_POLL_SEC: ${TOPO_POLL_SEC:-5}
+    volumes:
+      - ./dev-env/config:/config:ro
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    networks: [nova]
+
+  du-mls-3:
+    build: ./sims/du_sim
+    container_name: du-mls-3
+    profiles: ["sims", "full"]
+    environment:
+      DU_ID: DU-MLS-3
+      INFLUX_URL: ${INFLUX_URL:-http://influxdb:8086}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG:-telecom}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-telecom_metrics}
+      TOPOLOGY_FILE: ${TOPOLOGY_FILE:-/config/topology.json}
+      TOPO_POLL_SEC: ${TOPO_POLL_SEC:-5}
+    volumes:
+      - ./dev-env/config:/config:ro
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    networks: [nova]
+
+  # ---- Control plane — Phase 1 ---------------------------------------------
+  controller:
+    build: ./agents/controller
+    container_name: controller
+    profiles: ["agents", "full"]
+    ports:
+      - "8080:8080"
+    environment:
+      INFLUX_URL: ${INFLUX_URL:-http://influxdb:8086}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG:-telecom}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-telecom_metrics}
+      TOPOLOGY_FILE: ${TOPOLOGY_FILE:-/config/topology.json}
+    volumes:
+      - ./dev-env/config:/config
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    networks: [nova]
+
+  # ---- Planning engine — Phase 3 -------------------------------------------
+  planning-api:
+    build: ./agents/planning
+    container_name: planning-api
+    profiles: ["agents", "full"]
+    ports:
+      - "8081:8081"
+    environment:
+      CONTROLLER_URL: ${CONTROLLER_URL:-http://controller:8080}
+    depends_on:
+      - controller
+    networks: [nova]
+
+  # ---- KPI agent — Phase 4 -------------------------------------------------
+  kpi-agent:
+    build: ./agents/kpi_agent
+    container_name: kpi-agent
+    profiles: ["agents", "full"]
+    environment:
+      INFLUX_URL: ${INFLUX_URL:-http://influxdb:8086}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG:-telecom}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-telecom_metrics}
+      CONTROLLER_URL: ${CONTROLLER_URL:-http://controller:8080}
+      POLL_INTERVAL_SEC: ${POLL_INTERVAL_SEC:-30}
+      MODEL_PATH: ${MODEL_PATH:-kpi_model.pt}
+      MIN_CONFIDENCE: ${MIN_CONFIDENCE:-0.70}
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    networks: [nova]
+
+  # ---- Orchestrator — Phase 5 ----------------------------------------------
+  orchestrator:
+    build: ./agents/orchestrator
+    container_name: orchestrator
+    profiles: ["agents", "full"]
+    ports:
+      - "8082:8082"
+    environment:
+      CLAUDE_CLI_PATH: ${CLAUDE_CLI_PATH:-}
+      ANTHROPIC_MODEL_NAME: ${ANTHROPIC_MODEL_NAME:-sonnet}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      CONTROLLER_URL: ${CONTROLLER_URL:-http://controller:8080}
+      PLANNING_URL: ${PLANNING_URL:-http://planning-api:8081}
+      INFLUX_URL: ${INFLUX_URL:-http://influxdb:8086}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG:-telecom}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-telecom_metrics}
+    depends_on:
+      - controller
+      - planning-api
+    networks: [nova]
+
+  # ---- Map server — Phase 6 ------------------------------------------------
+  map-server:
+    build: ./agents/map_server
+    container_name: map-server
+    profiles: ["agents", "full"]
+    ports:
+      - "8083:8083"
+    environment:
+      CONTROLLER_URL: ${CONTROLLER_URL:-http://controller:8080}
+      ORCHESTRATOR_URL: ${ORCHESTRATOR_URL:-http://orchestrator:8082}
+    depends_on:
+      - controller
+      - orchestrator
+    networks: [nova]
+
+networks:
+  nova:
+    driver: bridge
+
+volumes:
+  influxdb-data:
+  grafana-data:
