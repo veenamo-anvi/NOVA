@@ -62,18 +62,18 @@ NOVA/
 
 > Note: removed a pre-existing `dev-env` Docker Compose project (26 containers, different multi-region topology) that conflicted on NOVA's container names/ports. Data volumes left intact.
 
-## Phase 1 — Foundation: 30-Cell Topology + Controller
+## Phase 1 — Foundation: 30-Cell Topology + Controller ✅ COMPLETE
 **Goal:** the live network's source of truth and its control plane.
 
-- [ ] Generate the **30-cell Malleswaram topology**: 10 macro sites × 3 sectors, Nokia/Ericsson/Samsung/ZTE at 25% each, sector mix per spec (high-traffic vs residential sites), `MLS_<SITE>_<SECTOR>` naming, 3 DUs / 1 CU.
-- [ ] Build **Controller** (`agents/controller/`, FastAPI :8080):
-  - [ ] Atomic topology load/write (`.tmp` → rename).
-  - [ ] KPI merge from InfluxDB (`cell_kpi` last 3 min) on `/network`, `/cells`.
-  - [ ] Routes: `/health`, `/topology`, `/network`, `/cells`, `/cells/{id}`, `/dus`, `/cus`, `/neighbors/{id}`.
-  - [ ] Mutations: `/move/cell`, `/move/du`, `/topology/replace`, `/cells/add` (PCI auto-assign on `pci:0`), `DELETE /cells/{id}`.
-  - [ ] Write `topology_event` to InfluxDB on every mutation.
+- [x] Generate the **30-cell Malleswaram topology** (done in Phase 0 via `generate_topology.py`).
+- [x] Build **Controller** (`agents/controller/`, FastAPI :8080):
+  - [x] Atomic topology load/write (`.tmp` → `os.replace`) with a process lock.
+  - [x] KPI merge from InfluxDB (`cell_kpi` last 3 min) on `/network`, `/cells`, `/cells/{id}` (best-effort; serves config if Influx is down).
+  - [x] Routes: `/health`, `/topology`, `/network`, `/cells`, `/cells/{id}`, `/dus`, `/cus`, `/neighbors/{id}`.
+  - [x] Mutations: `/move/cell`, `/move/du`, `/topology/replace`, `/cells/add` (PCI auto-assign on `pci:0`), `DELETE /cells/{id}`.
+  - [x] Write `topology_event` to InfluxDB on every mutation.
 
-**Done when:** `GET /network` returns 30 cells; a `/move/cell` persists and emits a topology_event.
+**Done when:** ~~`GET /network` returns 30 cells; a `/move/cell` persists and emits a topology_event.~~ ✅ Verified: 30 cells, move persists & reverses, PCI auto-assign (→31), 7 topology_events landed in InfluxDB.
 
 ## Phase 2 — Simulators (Digital Twin)
 **Goal:** synthetic but physically-grounded KPI telemetry feeding InfluxDB.
