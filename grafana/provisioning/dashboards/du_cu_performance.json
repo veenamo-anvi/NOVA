@@ -1,0 +1,267 @@
+{
+  "uid": "nova-du-cu-perf",
+  "title": "DU/CU Performance",
+  "tags": [
+    "nova"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "editable": true,
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 24,
+      "type": "timeseries",
+      "title": "DU CPU (%)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"du_kpi\" and r._field==\"cpu_pct\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "type": "timeseries",
+      "title": "DU active UEs",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"du_kpi\" and r._field==\"active_ues\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "type": "timeseries",
+      "title": "DU fronthaul latency (us)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"du_kpi\" and r._field==\"fronthaul_latency_us\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "type": "timeseries",
+      "title": "CU PDCP DL (Gbps)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"cu_kpi\" and r._field==\"pdcp_dl_gbps\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "type": "timeseries",
+      "title": "Core registered UEs (AMF)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"core_kpi\" and r.component==\"AMF\" and r._field==\"registered_ues\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "type": "timeseries",
+      "title": "UPF DL throughput (Gbps)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"core_kpi\" and r.component==\"UPF\" and r._field==\"dl_throughput_gbps\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  }
+}

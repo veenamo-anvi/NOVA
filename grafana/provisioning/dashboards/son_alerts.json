@@ -1,0 +1,245 @@
+{
+  "uid": "nova-son-alerts",
+  "title": "SON & Alerts",
+  "tags": [
+    "nova"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "editable": true,
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "CRITICAL (60m)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:-60m) |> filter(fn:(r)=>r._measurement==\"alerts\" and r._field==\"ai_confidence\" and r.severity==\"CRITICAL\") |> count() |> group() |> sum()",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "type": "stat",
+      "title": "WARNING (60m)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:-60m) |> filter(fn:(r)=>r._measurement==\"alerts\" and r._field==\"ai_confidence\" and r.severity==\"WARNING\") |> count() |> group() |> sum()",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "type": "stat",
+      "title": "INFO (60m)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:-60m) |> filter(fn:(r)=>r._measurement==\"alerts\" and r._field==\"ai_confidence\" and r.severity==\"INFO\") |> count() |> group() |> sum()",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "SON actions by type",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"son_actions\" and r._field==\"confidence\") |> aggregateWindow(every:v.windowPeriod, fn:count, createEmpty:false) |> group(columns:[\"action_type\"])",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Mean AI confidence",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"alerts\" and r._field==\"ai_confidence\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false) |> group()",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "type": "table",
+      "title": "Recent SON actions",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:-60m) |> filter(fn:(r)=>r._measurement==\"son_actions\" and r._field==\"message\") |> keep(columns:[\"_time\",\"action_type\",\"cell_id\",\"_value\"]) |> sort(columns:[\"_time\"], desc:true) |> limit(n:20)",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  }
+}

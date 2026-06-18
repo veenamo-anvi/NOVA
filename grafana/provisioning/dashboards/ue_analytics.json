@@ -1,0 +1,138 @@
+{
+  "uid": "nova-ue-analytics",
+  "title": "UE Analytics",
+  "tags": [
+    "nova"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "editable": true,
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 15,
+      "type": "piechart",
+      "title": "DL bytes by slice",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 8
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "legend": {
+          "displayMode": "list"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:-30m) |> filter(fn:(r)=>r._measurement==\"ue_usage\" and r._field==\"dl_bytes\") |> group(columns:[\"slice_type\"]) |> sum()",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "Handover event rate",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 16,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"ue_mobility\" and r._field==\"ho_duration_ms\") |> aggregateWindow(every:v.windowPeriod, fn:count, createEmpty:false) |> group()",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "UE DL bytes by slice",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"ue_usage\" and r._field==\"dl_bytes\") |> aggregateWindow(every:v.windowPeriod, fn:sum, createEmpty:false) |> group(columns:[\"slice_type\",\"_time\"]) |> sum() |> group(columns:[\"slice_type\"])",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  }
+}

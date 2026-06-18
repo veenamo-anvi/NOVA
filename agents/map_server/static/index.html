@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NOVA — Malleswaram Live Cell Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  :root { --bg:#0e1117; --panel:#161b22; --fg:#e6edf3; --muted:#8b949e; --accent:#2f81f7; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--fg); }
+  #app { display:flex; height:100vh; }
+  #map { flex:1; }
+  #side { width:380px; background:var(--panel); display:flex; flex-direction:column; border-left:1px solid #30363d; }
+  header { padding:10px 14px; border-bottom:1px solid #30363d; }
+  header h1 { font-size:15px; margin:0; }
+  header .stat { font-size:12px; color:var(--muted); margin-top:4px; }
+  .filters { padding:8px 14px; border-bottom:1px solid #30363d; font-size:12px; }
+  .filters label { margin-right:10px; cursor:pointer; }
+  .legend { padding:8px 14px; font-size:11px; color:var(--muted); border-bottom:1px solid #30363d; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:3px; vertical-align:middle; }
+  #chat { flex:1; display:flex; flex-direction:column; min-height:0; }
+  #log { flex:1; overflow-y:auto; padding:10px 14px; font-size:13px; white-space:pre-wrap; }
+  #log .u { color:var(--accent); margin-top:8px; }
+  #log .a { color:var(--fg); }
+  .bar { display:flex; gap:6px; padding:8px; border-top:1px solid #30363d; }
+  .bar input { flex:1; background:#0d1117; border:1px solid #30363d; color:var(--fg); padding:7px; border-radius:6px; }
+  .bar button { background:var(--accent); color:#fff; border:0; padding:7px 12px; border-radius:6px; cursor:pointer; }
+  .chips { padding:0 8px 8px; display:flex; flex-wrap:wrap; gap:5px; }
+  .chip { background:#21262d; color:var(--muted); border:1px solid #30363d; border-radius:12px; padding:3px 9px; font-size:11px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+  <div id="side">
+    <header>
+      <h1>NOVA — Malleswaram Live Cell Map</h1>
+      <div class="stat" id="stat">loading…</div>
+    </header>
+    <div class="filters">
+      <strong>Gen:</strong>
+      <label><input type="checkbox" id="f5g" checked> 5G</label>
+      <label><input type="checkbox" id="f4g" checked> 4G</label>
+      &nbsp;<strong>Vendor:</strong>
+      <label><input type="checkbox" class="fv" value="Nokia" checked> Nokia</label>
+      <label><input type="checkbox" class="fv" value="Ericsson" checked> Ericsson</label>
+      <label><input type="checkbox" class="fv" value="Samsung" checked> Samsung</label>
+      <label><input type="checkbox" class="fv" value="ZTE" checked> ZTE</label>
+    </div>
+    <div class="legend">
+      <span class="dot" style="background:#2f81f7"></span>Nokia
+      <span class="dot" style="background:#3fb950"></span>Ericsson
+      <span class="dot" style="background:#a371f7"></span>Samsung
+      <span class="dot" style="background:#db6d28"></span>ZTE
+      &nbsp;| solid=5G faded=4G | red=overload amber=low SINR
+    </div>
+    <div id="chat">
+      <div id="log"><div class="a">Ask the network anything. Try the shortcuts below.</div></div>
+      <div class="chips">
+        <span class="chip">/status</span><span class="chip">/alerts</span>
+        <span class="chip">/cells</span><span class="chip">/plan</span>
+        <span class="chip">/son</span><span class="chip">/ue</span>
+      </div>
+      <div class="bar">
+        <input id="msg" placeholder="Message the orchestrator…"/>
+        <button id="send">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const VENDOR_COLOR = {Nokia:"#2f81f7", Ericsson:"#3fb950", Samsung:"#a371f7", ZTE:"#db6d28"};
+const SESSION = "map-" + Math.random().toString(36).slice(2, 9);
+const map = L.map("map").setView([13.005, 77.570], 14);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+  {attribution:"© OpenStreetMap, © CARTO", maxZoom:19}).addTo(map);
+let layer = L.layerGroup().addTo(map);
+
+function vendorsOn(){ return [...document.querySelectorAll(".fv:checked")].map(c=>c.value); }
+function genOn(g){ return g==="5G" ? f5g.checked : f4g.checked; }
+
+async function refresh(){
+  let data;
+  try { data = await (await fetch("/api/cells")).json(); }
+  catch(e){ stat.textContent = "controller unreachable"; return; }
+  layer.clearLayers();
+  const cells = (data.cells||[]).filter(c => genOn(c.generation) && vendorsOn().includes(c.vendor));
+  let ues=0, over=0;
+  for(const c of cells){
+    const k=c.kpi||{}; ues += k.connected_ues||0;
+    const overloaded=(k.prb_dl_pct||0)>85, lowSinr=(k.sinr_db??99)<5;
+    if(overloaded) over++;
+    const color = overloaded ? "#f85149" : lowSinr ? "#d29922" : VENDOR_COLOR[c.vendor]||"#888";
+    L.circle([c.lat,c.lon], {radius:c.coverage_radius_m, color, weight:1,
+      fillColor:color, fillOpacity:c.generation==="5G"?0.28:0.10})
+      .bindPopup(`<b>${c.id}</b> (${c.area})<br>
+        ${c.vendor} ${c.hardware_model}<br>
+        ${c.generation} ${c.band} · PCI ${c.pci}<br>
+        DU ${c.du_id} / CU ${c.cu_id}<br>
+        UEs ${k.connected_ues??"?"} · PRB ${k.prb_dl_pct??"?"}% · SINR ${k.sinr_db??"?"}dB<br>
+        RSRP ${k.rsrp_dbm??"?"}dBm · ${k.power_w??"?"}W · ${k.dl_throughput_mbps??"?"}Mbps<br>
+        coverage ${(c.coverage_radius_m/1000).toFixed(2)} km`)
+      .addTo(layer);
+  }
+  stat.textContent = `${cells.length} cells · ${ues.toLocaleString()} UEs · ${over} overloaded`;
+}
+document.querySelectorAll(".fv,#f5g,#f4g").forEach(el=>el.addEventListener("change",refresh));
+
+// chat
+const log=document.getElementById("log");
+function add(cls,txt){ const d=document.createElement("div"); d.className=cls; d.textContent=txt; log.appendChild(d); log.scrollTop=log.scrollHeight; return d; }
+async function send(text){
+  if(!text) return;
+  add("u","> "+text);
+  const out=add("a","");
+  try{
+    const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:text,session_id:SESSION})});
+    const reader=r.body.getReader(), dec=new TextDecoder();
+    while(true){ const {done,value}=await reader.read(); if(done) break; out.textContent+=dec.decode(value,{stream:true}); log.scrollTop=log.scrollHeight; }
+  }catch(e){ out.textContent="[error] "+e; }
+}
+document.getElementById("send").onclick=()=>{ const m=document.getElementById("msg"); send(m.value.trim()); m.value=""; };
+document.getElementById("msg").addEventListener("keydown",e=>{ if(e.key==="Enter"){ document.getElementById("send").click(); }});
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>send(c.textContent));
+
+refresh(); setInterval(refresh, 30000);
+</script>
+</body>
+</html>

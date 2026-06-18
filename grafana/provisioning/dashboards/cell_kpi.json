@@ -1,0 +1,288 @@
+{
+  "uid": "nova-cell-kpi",
+  "title": "Cell KPI",
+  "tags": [
+    "nova"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "editable": true,
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "PRB DL (%)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"cell_kpi\" and r._field==\"prb_dl_pct\" and r.generation==\"$generation\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "SINR (dB)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"cell_kpi\" and r._field==\"sinr_db\" and r.generation==\"$generation\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "RSRP (dBm)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"cell_kpi\" and r._field==\"rsrp_dbm\" and r.generation==\"$generation\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "DL Throughput (Mbps)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Mbits",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"cell_kpi\" and r._field==\"dl_throughput_mbps\" and r.generation==\"$generation\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "CQI",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"cell_kpi\" and r._field==\"cqi\" and r.generation==\"$generation\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "BLER (%) & Latency (ms)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb"
+          },
+          "query": "from(bucket:\"telecom_metrics\") |> range(start:v.timeRangeStart, stop:v.timeRangeStop) |> filter(fn:(r)=>r._measurement==\"cell_kpi\" and r._field==\"bler_pct\" and r.generation==\"$generation\") |> aggregateWindow(every:v.windowPeriod, fn:mean, createEmpty:false)",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "generation",
+        "type": "custom",
+        "label": "Generation",
+        "query": "5G,4G",
+        "current": {
+          "text": "5G",
+          "value": "5G"
+        },
+        "options": [
+          {
+            "text": "5G",
+            "value": "5G"
+          },
+          {
+            "text": "4G",
+            "value": "4G"
+          }
+        ]
+      }
+    ]
+  }
+}
