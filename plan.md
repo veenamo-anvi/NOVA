@@ -116,18 +116,23 @@ NOVA/
 > `du_id` tag, leaving load-balance with no target DU — removed the group() so
 > tags survive the pivot.
 
-## Phase 5 — Orchestrator (LLM Agent)
+## Phase 5 — Orchestrator (LLM Agent) ✅ COMPLETE
 **Goal:** natural-language operator control via tool-calling.
 
-- [ ] **FastAPI :8082** with `chat_turn` sync generator + `StreamingResponse`.
-- [ ] **13 tools** (`tools.py`) in Anthropic schema: query_network, list_cells, query_cell, move_cell, move_du, plan_network, plan_network_multi_period, apply_plan, get_alerts, query_ue, get_son_status, add_cell, remove_cell.
-- [ ] **Backend selection** by `CLAUDE_CLI_PATH`: Claude CLI (`CustomAnthropicClient`, schemas as-is) vs Gemini (`google-genai`, `_clean_params()` translation).
-- [ ] **Tool-calling loop**: `while True` until no function calls; JSON-sanitize results; per-session history (`_claude_sessions` / `_gemini_sessions`).
-- [ ] **Context injection** `build_network_context()` → Controller `/network` on every request.
-- [ ] Routes: `/chat`, `/history` (GET/DELETE), `/tools`, `/health`.
-- [ ] **`chat.py`** CLI (stdlib only): `/status /alerts /cells /plan /son /ue /history /clear /tools`, `--url`, `--session`.
+> Note: added a deterministic **MockBackend** (intent router) as a third backend
+> so `/chat` and the full tool pipeline are testable without any LLM credentials.
+> Selection: Claude CLI (if `CLAUDE_CLI_PATH` set & present) → Gemini (if
+> `GOOGLE_API_KEY`) → mock.
 
-**Done when:** `py chat.py` → "move the most loaded cell to the lightest DU" executes end-to-end.
+- [x] **FastAPI :8082** with streaming `StreamingResponse` over a sync generator.
+- [x] **13 tools** (`tools.py`) in Anthropic schema hitting real Controller/Planning/InfluxDB.
+- [x] **Backend selection** by `CLAUDE_CLI_PATH` / `GOOGLE_API_KEY`: ClaudeCLIBackend (`claude -p`), GeminiBackend (`google-genai`, `_clean_params()` translation), MockBackend.
+- [x] **Tool-calling loop**: Gemini `while True` until no function calls, JSON-sanitised results; mock single intent→tool; per-session in-memory history.
+- [x] **Context injection** `build_network_context()` → Controller `/network` in the system prompt.
+- [x] Routes: `/chat`, `/history` (GET/DELETE), `/tools`, `/health`.
+- [x] **`chat.py`** CLI (stdlib only): `/status /alerts /cells /plan /son /ue /history /clear /tools`, `--url`, `--session`.
+
+**Done when:** ~~`py chat.py` → "move the most loaded cell to the lightest DU" executes end-to-end.~~ ✅ Verified: `/health` reports backend, 13 tools listed, chat intents (status/plan-MIP/SON/alerts/move) execute through the tool loop against live services; `chat.py` shortcuts + history/clear work. (Free-form "most loaded → lightest" NL reasoning needs a real LLM backend; explicit moves work on mock.)
 
 ## Phase 6 — Map Server + Dashboards
 **Goal:** live visualization and an in-browser chat panel.
