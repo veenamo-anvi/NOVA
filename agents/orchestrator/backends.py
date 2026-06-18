@@ -36,7 +36,8 @@ You have tools to inspect and modify the live network, generate/apply plans, and
 read KPI alerts and autonomous SON actions. Guidelines:
 - Confirm before destructive actions (moving/removing cells, applying plans).
 - Flag overloaded cells (PRB > 85%) and degraded SINR (< 5 dB).
-- Summarise results concisely, using bullet points or compact tables."""
+- Summarise results concisely, using bullet points or compact tables.
+- Respond with your final answer only; do not narrate your step-by-step reasoning."""
 
 
 def build_network_context() -> str:
@@ -238,11 +239,64 @@ class ClaudeCLIBackend:
         history.append({"role": "assistant", "content": out})
 
 
+class AnthropicBackend:
+    """Direct Anthropic SDK backend — native tool-calling loop, no translation.
+
+    TOOL_SCHEMAS are already in Anthropic format, so they pass straight through.
+    Streams text per turn and loops while stop_reason == "tool_use".
+    """
+    backend = "anthropic-api"
+
+    def __init__(self):
+        import anthropic
+        self.anthropic = anthropic
+        self.client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
+        self.name = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-8")
+
+    def chat(self, history: list[dict], user_msg: str):
+        history.append({"role": "user", "content": user_msg})
+        messages = [{"role": h["role"], "content": h["content"]}
+                    for h in history if isinstance(h.get("content"), str)]
+        system = system_prompt_with_context()
+        final_text: list[str] = []
+        try:
+            while True:
+                with self.client.messages.stream(
+                        model=self.name, max_tokens=4096, system=system,
+                        tools=T.TOOL_SCHEMAS, messages=messages) as stream:
+                    for text in stream.text_stream:
+                        final_text.append(text)
+                        yield text
+                    final = stream.get_final_message()
+                messages.append({"role": "assistant", "content": final.content})
+                if final.stop_reason != "tool_use":
+                    break
+                tool_results = []
+                for block in final.content:
+                    if getattr(block, "type", None) == "tool_use":
+                        yield f"\n\n*[calling tool: {block.name}...]*\n"
+                        result = T.execute_tool(block.name, dict(block.input or {}))
+                        tool_results.append({
+                            "type": "tool_result", "tool_use_id": block.id,
+                            "content": json.dumps(result, default=str)})
+                messages.append({"role": "user", "content": tool_results})
+        except self.anthropic.APIError as e:  # noqa: BLE001
+            yield f"\n\n[Error] Anthropic API: {e}"
+        history.append({"role": "assistant", "content": "".join(final_text)})
+
+
 def get_backend():
     cli = os.environ.get("CLAUDE_CLI_PATH", "").strip()
     if cli and (shutil.which(cli) or os.path.exists(cli)):
         log.info("backend: Claude CLI (%s)", cli)
         return ClaudeCLIBackend(cli)
+    if os.environ.get("ANTHROPIC_API_KEY", "").strip():
+        try:
+            b = AnthropicBackend()
+            log.info("backend: Anthropic API (%s)", b.name)
+            return b
+        except Exception as e:  # noqa: BLE001
+            log.warning("Anthropic init failed (%s); trying next backend", e)
     if os.environ.get("GOOGLE_API_KEY", "").strip():
         try:
             b = GeminiBackend()

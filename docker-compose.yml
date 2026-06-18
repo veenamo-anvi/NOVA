@@ -204,6 +204,8 @@ services:
     environment:
       CLAUDE_CLI_PATH: ${CLAUDE_CLI_PATH:-}
       ANTHROPIC_MODEL_NAME: ${ANTHROPIC_MODEL_NAME:-sonnet}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-4-8}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
       CONTROLLER_URL: ${CONTROLLER_URL:-http://controller:8080}
