@@ -57,7 +57,62 @@ in [`docs/schema.md`](docs/schema.md). Regenerate the topology with:
 python dev-env/config/generate_topology.py
 ```
 
+## Deployment runbook
+
+### Prerequisites
+- Docker + Docker Compose, Python 3.12+ (for `chat.py` / `demo.py` / tests).
+- Ports free: 8080–8083, 8086, 3000.
+
+### Bring up the full stack
+```bash
+cp .env.example .env
+docker compose up -d influxdb grafana       # infra
+docker compose --profile sims up -d --build  # simulators (digital twin)
+docker compose --profile agents up -d --build # controller, planning, kpi, orch, map
+# or everything at once:
+docker compose --profile full up -d --build
+docker compose ps                            # expect 12 services up
+```
+
+### Verify
+```bash
+curl -s localhost:8080/network | python -c "import sys,json;print(len(json.load(sys.stdin)['cells']),'cells')"
+curl -s localhost:8082/health                # orchestrator backend/model
+open http://localhost:8083                   # live map
+open http://localhost:3000                   # Grafana (admin/admin) -> NOVA folder
+```
+
+### Operate
+```bash
+py chat.py                # interactive operator CLI
+py demo.py                # scripted end-to-end walkthrough
+```
+
+### Tests
+```bash
+python -m unittest discover -s tests -p "test_*.py"
+# unit tests run anywhere; the integration test auto-skips unless the stack is up.
+```
+
+### Enable a real LLM backend
+The orchestrator uses a deterministic **mock** backend unless credentials are set:
+- **Gemini**: put `GOOGLE_API_KEY=...` in `.env`, then `docker compose up -d orchestrator`.
+- **Claude CLI**: install the CLI in the orchestrator image (see its `Dockerfile`)
+  and set `CLAUDE_CLI_PATH=/usr/bin/claude`.
+
+### Teardown
+```bash
+docker compose down            # stop (keep volumes)
+docker compose down -v         # also remove influx/grafana/model volumes
+```
+
+### Note on `topology.json`
+It is both the committed **seed** and the **runtime state** the KPI agent mutates
+(autonomous SON moves). Regenerate the canonical seed any time with
+`python dev-env/config/generate_topology.py`.
+
 ## Build status
 
-Phase 0 (scaffolding + contracts + infra) is in place. Phases 1–7 are tracked in
-[`plan.md`](plan.md).
+All phases (0–7) complete — see [`plan.md`](plan.md). The 12-container stack is
+fully implemented: digital twin, control plane, planning (heuristic + MIP),
+BiLSTM SON agent, LLM orchestrator, live map, and Grafana dashboards.

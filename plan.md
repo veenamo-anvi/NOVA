@@ -143,11 +143,13 @@ NOVA/
 
 **Done when:** ~~map renders all 30 cells with live overlays; chat panel streams responses.~~ ✅ `/api/cells` returns 30 cells with coverage radii + live KPIs, map HTML served, `/api/chat` streams via the orchestrator proxy, all 5 dashboards provisioned (verified via Grafana API). All 12 containers running.
 
-## Phase 7 — Testing, Demo & Docs
-- [ ] Unit tests: placement, PCI graph-coloring, slice allocation, coverage-radius math.
-- [ ] Integration test: orchestrator → planning → controller → DU reconfigures.
-- [ ] Demo script: "deploy Bangalore network from scratch via chat."
-- [ ] `README.md` quickstart + deployment runbook.
+## Phase 7 — Testing, Demo & Docs ✅ COMPLETE
+- [x] Unit tests (`tests/`, stdlib unittest): placement, PCI graph-coloring, slice allocation, MIP feasibility/build-once, COST-231 propagation, coverage-radius, KPI features + class separability.
+- [x] Integration test: services healthy, 30 cells with live KPIs, plan generate/retrieve, 13 tools, chat executes a tool, map coverage — auto-skips if stack is down.
+- [x] Demo script (`demo.py`): scripted operator walkthrough (status → alerts → SON → MIP plan → UE → rebalance).
+- [x] `README.md` deployment runbook (bring-up, verify, operate, tests, real-LLM backend, teardown).
+
+**Done when:** ✅ 28 unit/integration tests pass; `demo.py` runs end-to-end against the live stack; runbook documented.
 
 ---
 
